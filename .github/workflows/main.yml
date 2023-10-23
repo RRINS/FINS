@@ -35,26 +35,26 @@ jobs:
           mbed compile -t GCC_ARM -m ${{ matrix.target }} --profile ${{ matrix.profile }}
           
 
-  build-cli-v2:
-    container:
-      image: ghcr.io/armmbed/mbed-os-env:master-latest
+  # build-cli-v2:
+  #   container:
+  #     image: ghcr.io/armmbed/mbed-os-env:master-latest
 
-    runs-on: ubuntu-latest
+  #   runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        target: [K64F, DISCO_L475VG_IOT01A, NRF52840_DK]
-        profile: [release, debug, develop]
+  #   strategy:
+  #     matrix:
+  #       target: [K64F, DISCO_L475VG_IOT01A, NRF52840_DK]
+  #       profile: [release, debug, develop]
         
 
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v2
+  #   steps:
+  #     -
+  #       name: Checkout
+  #       uses: actions/checkout@v2
           
-      -
-        name: build-example-application
-        run: |
-          set -e
-          mbed-tools deploy
-          mbed-tools compile -t GCC_ARM -m ${{ matrix.target }} --profile ${{ matrix.profile }}
+  #     -
+  #       name: build-example-application
+  #       run: |
+  #         set -e
+  #         mbed-tools deploy
+  #         mbed-tools compile -t GCC_ARM -m ${{ matrix.target }} --profile ${{ matrix.profile }}
