@@ -1,8 +1,13 @@
 name: Build example application
 
 on:
-  pull_request:
   push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
 
 jobs: 
   build-cli-v1:
