@@ -4,11 +4,10 @@
  */
 
 #include "mbed.h"
-#include "radio.h"
+#include "radioInterface.h"
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     500ms
-
 
 int main()
 {
