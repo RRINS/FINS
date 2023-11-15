@@ -79,5 +79,9 @@ types_c.taghl
 #CtrlP
 ctrlp.root
 
-#html
-*.html
+# Eclipse
+.metadata
+.settings
+[Rr]elease
+[Dd]ebug
+.launch
