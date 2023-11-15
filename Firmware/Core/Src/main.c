@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdio.h"
 #include "application/application.hpp"
 /* USER CODE END Includes */
 
@@ -54,7 +55,15 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
-
+int _write(int file, char *ptr, int len)
+{
+  /* Implement your write code here. This is
+     used by puts and printf for example */
+  int i=0;
+  for(i=0 ; i<len ; i++)
+    ITM_SendChar((*ptr++));
+  return len;
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -94,6 +103,8 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   setup();
+  printf(" %i Hello world!\n", 69);
+  printf(" %i Hello world!\n", 69);
   /* USER CODE END 2 */
 
   /* Infinite loop */
