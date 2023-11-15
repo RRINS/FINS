@@ -103,8 +103,8 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   setup();
-  printf(" %i Hello world!\n", 69);
-  printf(" %i Hello world!\n", 69);
+  // Short delay for USART to initialize
+  HAL_Delay(50U);
   /* USER CODE END 2 */
 
   /* Infinite loop */
