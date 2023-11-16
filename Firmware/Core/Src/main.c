@@ -68,7 +68,15 @@ int _write(int file, char *ptr, int len)
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static const uint8_t ACCEL_ADDR = 0x18;
 
+static const uint8_t ACC_CHIP_ID = 0x00;
+// write 0x00 for OFF, 0x04 for ON
+static const uint8_t ACC_PWR_CTRL = 0x7D;
+
+HAL_StatusTypeDef ret;
+uint8_t buf[12];
+int16_t val;
 /* USER CODE END 0 */
 
 /**
@@ -102,9 +110,28 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  setup();
-  // Short delay for USART to initialize
+
+  // Short delay for devices to initialize
+  HAL_Delay(500U);
+
+  uint8_t onCommand[] = {ACC_PWR_CTRL, 0x04};
+  ret = HAL_I2C_Master_Transmit(&hi2c1, ACCEL_ADDR, onCommand, 2, HAL_MAX_DELAY);
+  if ( ret != HAL_OK ) {
+	printf("Error Tx: %s\n", (char*)buf);
+  }
+
   HAL_Delay(50U);
+
+
+  for(int i=1; i<128; i++)
+	{
+	  ret = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t)(i<<1), 3, 5);
+	  if(ret == HAL_OK)
+	  {
+		  printf("Heard at: 0x%X", i);
+	  }
+	}
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -114,7 +141,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	loop();
+	uint8_t idCommand[] = {ACC_CHIP_ID};
+    ret = HAL_I2C_Master_Transmit(&hi2c1, ACCEL_ADDR, idCommand, 1, HAL_MAX_DELAY);
+    ret = HAL_I2C_Master_Receive(&hi2c1, ACCEL_ADDR, buf, 1, HAL_MAX_DELAY);
+
+    printf("Accel ID: %i\n", buf[0]);
+	HAL_Delay(500U);
   }
   /* USER CODE END 3 */
 }
