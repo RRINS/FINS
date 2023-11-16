@@ -11,9 +11,6 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-build
-Drivers
-
 # https://github.com/github/gitignore/blob/master/C.gitignore
 
 # Prerequisites
