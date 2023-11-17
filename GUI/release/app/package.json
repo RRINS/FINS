@@ -1,0 +1,18 @@
+{
+  "name": "lcp-gui",
+  "version": "0.0.0",
+  "description": "GUI for easy control, observation, and analysis of data from the LCP firmware. Built using node.js, using React.js and TypeScript.",
+  "license": "MIT",
+  "author": {
+    "name": "Akronauts Rocket Design Team",
+    "email": "uakronauts@gmail.com",
+    "url": "https://akronauts.org"
+  },
+  "main": "./dist/main/main.js",
+  "scripts": {
+    "rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "postinstall": "npm run rebuild && npm run link-modules",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
+  },
+  "dependencies": {}
+}
