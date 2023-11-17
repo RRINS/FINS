@@ -1,0 +1,45 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Install Node and NPM
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install and build
+        run: |
+          npm install
+          npm run postinstall
+          npm run build
+
+      - name: Update patch number
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_KEY }}
+        run: |
+          git stash
+          npm version patch
+          git stash pop
+          git push
+
+      - name: Publish releases
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_KEY }}
+        run: |
+          npm exec electron-builder -- --publish always --win
