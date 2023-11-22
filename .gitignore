@@ -11,6 +11,9 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
+node_modules
+.erb
+
 # https://github.com/github/gitignore/blob/master/C.gitignore
 
 # Prerequisites
