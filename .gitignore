@@ -1,7 +1,6 @@
 # STM32CubeIDE Ignores
 Inc
 Drivers
-Startup
 
 # CMake Ignores
 CMakeLists.txt.user
