@@ -44,6 +44,7 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -55,6 +56,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
 int _write(int file, char *ptr, int len)
 {
@@ -110,7 +112,9 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
+  char textBuffer[128];
 
   // Short delay for devices to initialize
   HAL_Delay(1000U);
@@ -142,6 +146,9 @@ int main(void)
 	}
   printf("range: 0x%X\n", range);
 
+  unsigned long loopCount = 0;
+  const unsigned long LOOPDELAY = 10;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -171,10 +178,10 @@ int main(void)
     accelY = y/32768.0 * pow(2.0, range + 1.0) * 1.5;
     accelZ = z/32768.0 * pow(2.0, range + 1.0) * 1.5;
 
-    printf("X: %f, Y: %f, Z: %f\n", accelX, accelY, accelZ);
+    int size = snprintf(textBuffer, sizeof(textBuffer), "{ \"accel\": {\"X\":%f, \"Y\":%f, \"Z\":%f}, \"time\": %lu}\n", accelX, accelY, accelZ, loopCount++ * LOOPDELAY);
+    HAL_UART_Transmit(&huart4, textBuffer, size, HAL_MAX_DELAY);
 
-    loop();
-	HAL_Delay(50U);
+	HAL_Delay(LOOPDELAY);
   }
   /* USER CODE END 3 */
 }
@@ -257,6 +264,39 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
+  * @brief UART4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART4_Init(void)
+{
+
+  /* USER CODE BEGIN UART4_Init 0 */
+
+  /* USER CODE END UART4_Init 0 */
+
+  /* USER CODE BEGIN UART4_Init 1 */
+
+  /* USER CODE END UART4_Init 1 */
+  huart4.Instance = UART4;
+  huart4.Init.BaudRate = 9600;
+  huart4.Init.WordLength = UART_WORDLENGTH_8B;
+  huart4.Init.StopBits = UART_STOPBITS_1;
+  huart4.Init.Parity = UART_PARITY_NONE;
+  huart4.Init.Mode = UART_MODE_TX_RX;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART4_Init 2 */
+
+  /* USER CODE END UART4_Init 2 */
 
 }
 
