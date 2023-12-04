@@ -81,6 +81,7 @@ static const uint16_t GYRO_ADDR = 0x68 << 1;
 static const uint8_t GYRO_CHIP_ID = 0x00;
 static const uint8_t GYRO_RANGE = 0x0F;
 static const uint16_t GYRO_RANGE_CONVERSION[] = { 2000, 1000, 500, 250, 125 };
+static const uint8_t GYRO_BANDWIDTH = 0x10;
 
 HAL_StatusTypeDef ret;
 uint8_t buf[12];
@@ -158,6 +159,13 @@ int main(void)
 	{
 		printf("Error Tx: %i %s\n", ret, (char*)buf);
 	}
+
+  uint8_t newGyroBandwidth = 0x07;
+  ret = HAL_I2C_Mem_Write(&hi2c1, GYRO_ADDR, GYRO_BANDWIDTH, I2C_MEMADD_SIZE_8BIT, &newGyroBandwidth, 1, HAL_MAX_DELAY);
+    if(ret != HAL_OK)
+  	{
+  		printf("Error Tx: %i %s\n", ret, (char*)buf);
+  	}
 
   ret = HAL_I2C_Mem_Read(&hi2c1, GYRO_ADDR, GYRO_RANGE, I2C_MEMADD_SIZE_8BIT, &gyroRange, 1, HAL_MAX_DELAY);
     if(ret != HAL_OK)
