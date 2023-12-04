@@ -72,10 +72,15 @@ int _write(int file, char *ptr, int len)
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 static const uint16_t ACCEL_ADDR = 0x18 << 1;
-
 static const uint8_t ACC_CHIP_ID = 0x00;
 // write 0x00 for OFF, 0x04 for ON
 static const uint8_t ACC_PWR_CTRL = 0x7D;
+static const uint8_t ACC_RANGE = 0x41;
+
+static const uint16_t GYRO_ADDR = 0x68 << 1;
+static const uint8_t GYRO_CHIP_ID = 0x00;
+static const uint8_t GYRO_RANGE = 0x0F;
+static const uint16_t GYRO_RANGE_CONVERSION[] = { 2000, 1000, 500, 250, 125 };
 
 HAL_StatusTypeDef ret;
 uint8_t buf[12];
@@ -114,7 +119,7 @@ int main(void)
   MX_I2C1_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
-  char textBuffer[128];
+  char textBuffer[256];
 
   // Short delay for devices to initialize
   HAL_Delay(1000U);
@@ -137,17 +142,33 @@ int main(void)
 	  }
 	}
 
-  uint8_t range;
+  uint8_t accelRange;
+  uint8_t gyroRange;
   // Read accel range register
-  ret = HAL_I2C_Mem_Read(&hi2c1, ACCEL_ADDR, 0x41, I2C_MEMADD_SIZE_8BIT, &range, 1, HAL_MAX_DELAY);
+  ret = HAL_I2C_Mem_Read(&hi2c1, ACCEL_ADDR, ACC_RANGE, I2C_MEMADD_SIZE_8BIT, &accelRange, 1, HAL_MAX_DELAY);
   if(ret != HAL_OK)
 	{
 		printf("Error Tx: %i %s\n", ret, (char*)buf);
 	}
-  printf("range: 0x%X\n", range);
+  printf("accel range: 0x%X\n", accelRange);
+
+  uint8_t newGyroRange = 0x02;
+  ret = HAL_I2C_Mem_Write(&hi2c1, GYRO_ADDR, GYRO_RANGE, I2C_MEMADD_SIZE_8BIT, &newGyroRange, 1, HAL_MAX_DELAY);
+  if(ret != HAL_OK)
+	{
+		printf("Error Tx: %i %s\n", ret, (char*)buf);
+	}
+
+  ret = HAL_I2C_Mem_Read(&hi2c1, GYRO_ADDR, GYRO_RANGE, I2C_MEMADD_SIZE_8BIT, &gyroRange, 1, HAL_MAX_DELAY);
+    if(ret != HAL_OK)
+  	{
+  		printf("Error Tx: %i %s\n", ret, (char*)buf);
+  	}
+    float gyroConversion = GYRO_RANGE_CONVERSION[gyroRange] / 32767.0;
+    printf("gyro range: 0x%X, conversion %f\n", gyroRange, gyroConversion);
 
   unsigned long loopCount = 0;
-  const unsigned long LOOPDELAY = 10;
+  const unsigned long LOOPDELAY = 100;
 
   /* USER CODE END 2 */
 
@@ -174,11 +195,32 @@ int main(void)
 
     float accelX, accelY, accelZ;
 
-    accelX = x/32768.0 * pow(2.0, range + 1.0) * 1.5;
-    accelY = y/32768.0 * pow(2.0, range + 1.0) * 1.5;
-    accelZ = z/32768.0 * pow(2.0, range + 1.0) * 1.5;
+    accelX = x/32768.0 * pow(2.0, accelRange + 1.0) * 1.5;
+    accelY = y/32768.0 * pow(2.0, accelRange + 1.0) * 1.5;
+    accelZ = z/32768.0 * pow(2.0, accelRange + 1.0) * 1.5;
 
-    int size = snprintf(textBuffer, sizeof(textBuffer), "{ \"accel\": {\"X\":%f, \"Y\":%f, \"Z\":%f}, \"time\": %lu}\n", accelX, accelY, accelZ, loopCount++ * LOOPDELAY);
+    for(int i = 0; i < 6; ++i)
+    {
+    	ret = HAL_I2C_Mem_Read(&hi2c1, GYRO_ADDR, 0x02+i, I2C_MEMADD_SIZE_8BIT, &buf[i], 1, HAL_MAX_DELAY);
+		if(ret != HAL_OK)
+		{
+			printf("Error Tx: %i %s\n", ret, (char*)buf);
+		}
+    }
+
+    x = buf[1]*256 + buf[0];
+	y = buf[3]*256 + buf[2];
+	z = buf[5]*256 + buf[4];
+
+	float gyroX, gyroY, gyroZ;
+
+	gyroX = x * gyroConversion;
+	gyroY = y * gyroConversion;
+	gyroZ = z * gyroConversion;
+
+    int size = snprintf(textBuffer, sizeof(textBuffer),
+    		"{ \"accel\": {\"X\":%f, \"Y\":%f, \"Z\":%f}, \"gyro\": {\"X\":%f, \"Y\":%f, \"Z\":%f}, \"time\": %lu}\n",
+    		accelX, accelY, accelZ, gyroX, gyroY, gyroZ, loopCount++ * LOOPDELAY);
     HAL_UART_Transmit(&huart4, textBuffer, size, HAL_MAX_DELAY);
 
 	HAL_Delay(LOOPDELAY);
@@ -198,7 +240,7 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -208,12 +250,19 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 16;
-  RCC_OscInitStruct.PLL.PLLN = 336;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
+  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLN = 180;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Activate the Over-Drive mode
+  */
+  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
     Error_Handler();
   }
@@ -224,10 +273,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
     Error_Handler();
   }
